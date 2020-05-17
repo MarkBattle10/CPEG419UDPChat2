@@ -38,7 +38,6 @@ void broadcast(struct sockaddr_in sender, int all, client_t *clientList){
 		
 		iter = iter->next;
 	}
-
 }
 */
 
@@ -93,8 +92,11 @@ int main(int argc, char *argv[])
 	{
 		bzero(sendMsgBuf, MSGSIZE);
 		cliAddrLen = sizeof(echoClntAddr);
+		/*receive the names of the users and store their information
+		 *  in a buffer to be used for later
+		 */
 		if(numUsers<MAXUSERS){
-			//printf("made it here first");
+			printf("made it here first\n");
 			if((recvMsgSize = recvfrom(sock, nameBuffer, NAMEMAX, 0, (struct sockaddr *) &echoClntAddr, &cliAddrLen)) < 0){
 				DieWithError("recvfrom() failed");
 			}
@@ -102,26 +104,22 @@ int main(int argc, char *argv[])
 			if(numUsers == 0){
 				clntList[0].clntAddr = echoClntAddr;
 				strcpy(clntList[0].username, nameBuffer);
-				//numUsers++;
 				printf("clntAddr: %d, username: %s\n", clntList[0].clntAddr.sin_port, clntList[0].username);
 
 				if(sendto(sock, clntList[0].username, NAMEMAX, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
 					DieWithError("sendto() failed");
 				}
+				numUsers++;
 			}
-			int i = 0;
-			while(i < numUsers){
+			else{
 				clientExists = FALSE;
-				for(int h=0; h<=numUsers;h++){
-					if(clientCompare(clntList[h].clntAddr, echoClntAddr) == TRUE){
+				for(int i=0; i<numUsers;i++){
+					if(clientCompare(clntList[i].clntAddr, echoClntAddr) == TRUE){
 						clientExists=TRUE;
 					}
 				}
 				if(clientExists==TRUE){
 					strcpy(sendMsgBuf, "already have this client");
-					//if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &echoClntAddr, sizeof(echoClntAddr)) < 0){
-					//	DieWithError("sendto() failed");
-					//}	
 					
 				}
 				else{
@@ -135,27 +133,25 @@ int main(int argc, char *argv[])
 							}
 						}
 					}
-					//numUsers++;
-
-				}	
-				i++;
-					
+					numUsers++;
+				}						
 			}
-			numUsers++;	
-			//printf("numUsers: %d, MAXUSERS: %d\n", numUsers, MAXUSERS);
+			printf("numUsers: %d\n", numUsers);
 		}
+		/*send and receive messages from each client to other clients*/
 		else{
+			printf("made it here");
 			bzero(&echoClntAddr, sizeof(struct sockaddr_in));
 			bzero(requestMsgBuf, MSGSIZE);
 			cliAddrLen = sizeof(echoClntAddr);
-			printf("made it here");
-			if((recvMsgSize = recvfrom(sock, requestMsgBuf, MSGSIZE, 0, (struct sockaddr *) &echoClntAddr, cliAddrLen)) < 0){
+			
+			if((recvMsgSize = recvfrom(sock, requestMsgBuf, MSGSIZE, 0, &echoClntAddr, cliAddrLen)) < 0){
 				DieWithError("recvfrom() failed");
 			}
 			requestMsgBuf[recvMsgSize] = '\0';
 			printf("msg %s\n",requestMsgBuf);
 			/* check to see what the client wants to do */
-			if(strncmp("broadcast", requestMsgBuf, 9) == 0){
+			if(strcmp("broadcast", requestMsgBuf) == 0){
 				strcat(sendMsgBuf, "type your message (max 1024 characters)");
 				if((sendto(sock, sendMsgBuf, MSGSIZE, 0, (struct sockaddr *) &echoClntAddr, sizeof(echoClntAddr))) < 0){
 					DieWithError("sendto() failed");
