@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 	char echoBuffer[NAMEMAX+1];
 	char usersBuffer[MAXUSERS][NAMEMAX];
 	int numUsers;
+	int cliExists;
 	unsigned int userNameLen;
 	int respStringLen;
 	char sendMsgBuf[MAXMSG];
@@ -59,33 +60,37 @@ int main(int argc, char *argv[])
 	/*send the string to the server*/
 	if (sendto(sock, userName, userNameLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr))!=userNameLen)
 		DieWithError("send() sent a different number of bytes than expected");
-	/*receive number of users in chat*/
-	/*
-	if((respStringLen = recvfrom(sock, echoBuffer, NAMEMAX, 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr))) < 0){
-		DieWithError("recvfrom() failed");
-	}
-	*/
-	/*receive the usernames of the users in the chat*/
+
 	fromSize = sizeof(fromAddr);
 	numUsers = 0;
+	for(int j = 0;j<MAXUSERS;j++){
+		usersBuffer[j][0] = 0;
+	}
+	printf("Current Users: \n");
 	for(;;){
+		/*receive the usernames of the users in the chat*/
 		if(numUsers<MAXUSERS){
 			int i=0;
-			while(i<=numUsers){
-				if((respStringLen = recvfrom(sock, echoBuffer, NAMEMAX, 0, (struct sockaddr *) &fromAddr, &fromSize)) < 0){
-					DieWithError("recv() failed or connection closed prematurely");
-				}
-				echoBuffer[respStringLen] = '\0';
-				strcpy(usersBuffer[numUsers], echoBuffer);
-				printf("i: %d, numUsers: %d\n", i, numUsers);
-				if(i == 0){
-					printf("Current Users: ");
-				}
-				printf("%s\n", usersBuffer[numUsers]);
-				i++;
+			cliExists=0;
+			if((respStringLen = recvfrom(sock, echoBuffer, NAMEMAX, 0, (struct sockaddr *) &fromAddr, &fromSize)) < 0){
+				DieWithError("recv() failed or connection closed prematurely");
 			}
-			numUsers++;
+			echoBuffer[respStringLen] = '\0';
+				
+				for(int j=0;j<=numUsers;j++){
+					if(strcmp(usersBuffer[j],echoBuffer) == 0){
+						cliExists = 1;
+					}
+				}
+			
+			if(!cliExists){
+				strcpy(usersBuffer[numUsers], echoBuffer);
+				printf("%s\n", usersBuffer[numUsers]);
+				numUsers++;
+				//printf("numUsers: %d\n",numUsers);
+			}
 		}
+		/*after all users enter the chatroom, begin sending messages*/
 		else{	
 			int charIter = 0;
 			while((sendMsgBuf[charIter++] = getchar())!= '\n');
@@ -96,8 +101,6 @@ int main(int argc, char *argv[])
 				DieWithError("recv() failed or connection closed prematurely");
 			}
 
-			
-			//printf("chatroom is full");
 		}
 
 
