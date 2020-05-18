@@ -95,52 +95,90 @@ int main(int argc, char *argv[])
 		/*receive the names of the users and store their information
 		 *  in a buffer to be used for later
 		 */
-		if(numUsers<MAXUSERS){
-			printf("made it here first\n");
-			if((recvMsgSize = recvfrom(sock, nameBuffer, NAMEMAX, 0, (struct sockaddr *) &echoClntAddr, &cliAddrLen)) < 0){
+		//if(numUsers<MAXUSERS){
+			//printf("made it here first\n");
+		if((recvMsgSize = recvfrom(sock, requestMsgBuf, MSGSIZE, 0, (struct sockaddr *) &echoClntAddr, &cliAddrLen)) < 0){
 				DieWithError("recvfrom() failed");
 			}
-			nameBuffer[recvMsgSize] = '\0';
-			if(numUsers == 0){
-				clntList[0].clntAddr = echoClntAddr;
-				strcpy(clntList[0].username, nameBuffer);
-				printf("clntAddr: %d, username: %s\n", clntList[0].clntAddr.sin_port, clntList[0].username);
-
-				if(sendto(sock, clntList[0].username, NAMEMAX, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
-					DieWithError("sendto() failed");
-				}
-				numUsers++;
+		clientExists = FALSE;
+		requestMsgBuf[recvMsgSize] = '\0';
+		printf("msg: %s\n", requestMsgBuf);
+		//printf("strcmp: %d\n",strcmp("broadcast\n",requestMsgBuf));
+		for(int i=0;i<=numUsers;i++){
+			if(clientCompare(clntList[i].clntAddr, echoClntAddr) == TRUE){
+				clientExists = TRUE;
 			}
-			else{
-				clientExists = FALSE;
-				for(int i=0; i<numUsers;i++){
-					if(clientCompare(clntList[i].clntAddr, echoClntAddr) == TRUE){
-						clientExists=TRUE;
-					}
-				}
-				if(clientExists==TRUE){
-					strcpy(sendMsgBuf, "already have this client");
-					
-				}
-				else{
-					clntList[numUsers].clntAddr = echoClntAddr;
-					strcpy(clntList[numUsers].username, nameBuffer);
-					printf("new user added: %s\n", clntList[numUsers].username);
-					for(int j = 0;j<=numUsers;j++){
-						for(int k = 0; k<=numUsers; k++){
-							if(sendto(sock, clntList[k].username, NAMEMAX, 0, &clntList[j].clntAddr, sizeof(clntList[j].clntAddr)) < 0){
-								DieWithError("sendto() failed");
-							}
-						}
-					}
-					numUsers++;
-				}						
-			}
-			printf("numUsers: %d\n", numUsers);
 		}
-		/*send and receive messages from each client to other clients*/
-		else{
-			printf("made it here");
+		printf("clientExists %d\n", clientExists);
+		if(numUsers == 0){
+			bzero(sendMsgBuf, MSGSIZE);
+			clntList[0].clntAddr = echoClntAddr;
+			strcpy(clntList[0].username, requestMsgBuf);
+			strcpy(sendMsgBuf, "Username");
+			printf("clntAddr: %d, username: %s\n", clntList[0].clntAddr.sin_port, clntList[0].username);
+			
+			if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
+				DieWithError("sendto() failed");
+			}
+
+
+			if(sendto(sock, clntList[0].username, NAMEMAX, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
+				DieWithError("sendto() failed");
+			}
+			numUsers++;
+		}
+		else if(!clientExists){
+			bzero(sendMsgBuf, MSGSIZE);
+			clntList[numUsers].clntAddr = echoClntAddr;
+			strcpy(sendMsgBuf, "Username");
+			strcpy(clntList[numUsers].username, requestMsgBuf);
+			//strcat(sendMsgBuf, clntList[numUsers].username);
+			printf("new user added: %s\n", clntList[numUsers].username);
+			for(int j = 0;j<=numUsers;j++){
+				for(int k = 0; k<=numUsers; k++){
+					if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[j].clntAddr, sizeof(clntList[j].clntAddr)) < 0){
+						DieWithError("sendto() failed");
+					}
+
+					if(sendto(sock, clntList[k].username, MSGSIZE, 0, &clntList[j].clntAddr, sizeof(clntList[j].clntAddr)) < 0){
+						DieWithError("sendto() failed");
+					}
+				}
+			}
+			numUsers++;
+			//printf("numUsers: %d\n", numUsers);			
+		}
+		//printf("strcmp: %d\n",strcmp("broadcast\n",requestMsgBuf));
+		if(strcmp("broadcast\n", requestMsgBuf) == 0){
+			bzero(sendMsgBuf, MSGSIZE);
+			strcpy(sendMsgBuf,"enter your message");
+			if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &echoClntAddr, sizeof(echoClntAddr)) < 0){
+				DieWithError("sendto() failed");
+			}
+			if((recvMsgSize = recvfrom(sock, requestMsgBuf, MSGSIZE, 0, (struct sockaddr *) &echoClntAddr, &cliAddrLen)) < 0){
+				DieWithError("recvfrom() failed");
+			}
+			requestMsgBuf[recvMsgSize] = '\0';
+			bzero(sendMsgBuf, MSGSIZE);
+			//strcpy(sendMsgBuf, requestMsgBuf);
+			for(int j = 0;j<numUsers;j++){
+				if(clientCompare(clntList[j].clntAddr, echoClntAddr) == TRUE){
+					strcpy(sendMsgBuf, clntList[j].username);
+					strcat(sendMsgBuf, ": ");
+					strcat(sendMsgBuf, requestMsgBuf);
+				}
+			}
+			for(int k = 0;k<numUsers;k++){
+				if(clientCompare(clntList[k].clntAddr, echoClntAddr) == FALSE){
+					if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[k].clntAddr, sizeof(clntList[k].clntAddr)) < 0){
+						DieWithError("sendto() failed");
+					}
+				}
+			}
+
+
+		}
+		/*
 			bzero(&echoClntAddr, sizeof(struct sockaddr_in));
 			bzero(requestMsgBuf, MSGSIZE);
 			cliAddrLen = sizeof(echoClntAddr);
@@ -150,8 +188,9 @@ int main(int argc, char *argv[])
 			}
 			requestMsgBuf[recvMsgSize] = '\0';
 			printf("msg %s\n",requestMsgBuf);
+		*/
 			/* check to see what the client wants to do */
-			if(strcmp("broadcast", requestMsgBuf) == 0){
+		/*	if(strcmp("broadcast", requestMsgBuf) == 0){
 				strcat(sendMsgBuf, "type your message (max 1024 characters)");
 				if((sendto(sock, sendMsgBuf, MSGSIZE, 0, (struct sockaddr *) &echoClntAddr, sizeof(echoClntAddr))) < 0){
 					DieWithError("sendto() failed");
@@ -161,7 +200,8 @@ int main(int argc, char *argv[])
 			else if(strncmp("private", requestMsgBuf, 7) == 0){
 				
 			}
-		}
+		*/
+		//}
 	}
 /* NOT REACHED */
 }
