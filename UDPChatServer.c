@@ -52,14 +52,10 @@ int main(int argc, char *argv[])
 	struct sockaddr_in chatServAddr; /* Local address */
 	struct sockaddr_in chatClntAddr;
 	struct sockaddr_in sendToAddr;
-	//client_t clientList; /* to keep track of the clients */
 	unsigned int cliAddrLen; /* Length of incoming message */
-	//char nameBuffer[NAMEMAX]; /* Buffer for usernames */
 	char sendToUser[NAMEMAX]; 
-	//char userBuffer[MAXUSERS][NAMEMAX]; /*buffer to collect each name*/
 	char requestMsgBuf[MSGSIZE]; /* buffer that is being received from the client by the server */
 	char sendMsgBuf[MSGSIZE+NAMEMAX+11]; /* buffer that is being sent from the server to a client: have to have enough space for the message size, the username, and the string "[private]:" */
-	//struct sockaddr_in strUserList[MAXUSERS];
 	client_t clntList[MAXUSERS]; /* list of clients connected to the server in the chatroom */
 	int clientExists; /* used to determine if the client already exists in the chatroom */
 	int numUsers; /* keep track of the total number of users in the chatroom */
@@ -103,14 +99,11 @@ int main(int argc, char *argv[])
 			}
 		clientExists = FALSE;
 		requestMsgBuf[recvMsgSize] = '\0';
-		printf("msg: %s\n", requestMsgBuf);
-		//printf("strcmp: %d\n",strcmp("broadcast\n",requestMsgBuf));
 		for(iter=0;iter<=numUsers;iter++){
 			if(clientCompare(clntList[iter].clntAddr, chatClntAddr) == TRUE){
 				clientExists = TRUE;
 			}
 		}
-		printf("clientExists %d\n", clientExists);
 		if(numUsers == 0){
 			bzero(sendMsgBuf, MSGSIZE);
 			clntList[0].clntAddr = chatClntAddr;
