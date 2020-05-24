@@ -105,12 +105,12 @@ int main(int argc, char *argv[])
 			}
 		}
 		if(numUsers == 0){
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			clntList[0].clntAddr = chatClntAddr;
 			strcpy(clntList[0].username, requestMsgBuf);
 			strcpy(sendMsgBuf, "Username");
 			
-			if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
+			if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
 				DieWithError("sendto() failed");
 			}
 
@@ -118,19 +118,20 @@ int main(int argc, char *argv[])
 			if(sendto(sock, clntList[0].username, NAMEMAX, 0, &clntList[0].clntAddr, sizeof(clntList[0].clntAddr)) < 0){
 				DieWithError("sendto() failed");
 			}
+			printf("new user added: %s\n", clntList[0].username);
 			numUsers++;
 		}
 		/* if client doesn't exist, add them to the list of clients connected to the server */
 		else if(!clientExists){
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			clntList[numUsers].clntAddr = chatClntAddr;
 			strcpy(sendMsgBuf, "Username");
 			strcpy(clntList[numUsers].username, requestMsgBuf);
-			//strcat(sendMsgBuf, clntList[numUsers].username);
+
 			printf("new user added: %s\n", clntList[numUsers].username);
 			for(int j = 0;j<=numUsers;j++){
 				for(int k = 0; k<=numUsers; k++){
-					if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[j].clntAddr, sizeof(clntList[j].clntAddr)) < 0){
+					if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &clntList[j].clntAddr, sizeof(clntList[j].clntAddr)) < 0){
 						DieWithError("sendto() failed");
 					}
 
@@ -146,16 +147,16 @@ int main(int argc, char *argv[])
 		 * the message.
 		 */
 		if(strcmp("broadcast\n", requestMsgBuf) == 0){
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			strcpy(sendMsgBuf,"enter your message");
-			if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &chatClntAddr, sizeof(chatClntAddr)) < 0){
+			if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &chatClntAddr, sizeof(chatClntAddr)) < 0){
 				DieWithError("sendto() failed");
 			}
 			if((recvMsgSize = recvfrom(sock, requestMsgBuf, MSGSIZE, 0, (struct sockaddr *) &chatClntAddr, &cliAddrLen)) < 0){
 				DieWithError("recvfrom() failed");
 			}
 			requestMsgBuf[recvMsgSize] = '\0';
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			for(iter = 0;iter<numUsers;iter++){
 				if(clientCompare(clntList[iter].clntAddr, chatClntAddr) == TRUE){
 					strcpy(sendMsgBuf, clntList[iter].username);
@@ -165,7 +166,7 @@ int main(int argc, char *argv[])
 			}
 			for(iter = 0;iter<numUsers;iter++){
 				if(clientCompare(clntList[iter].clntAddr, chatClntAddr) == FALSE){
-					if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[iter].clntAddr, sizeof(clntList[iter].clntAddr)) < 0){
+					if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &clntList[iter].clntAddr, sizeof(clntList[iter].clntAddr)) < 0){
 						DieWithError("sendto() failed");
 					}
 				}
@@ -180,9 +181,9 @@ int main(int argc, char *argv[])
 		 * plus saying that it is a private message
 		 */
 		else if(strcmp("private\n", requestMsgBuf) == 0){
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			strcpy(sendMsgBuf, "enter the name of the user you would like to send the message to:");
-			if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &chatClntAddr, sizeof(chatClntAddr)) < 0){
+			if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &chatClntAddr, sizeof(chatClntAddr)) < 0){
 				DieWithError("sendto() failed");
 			}
 			if((recvMsgSize = recvfrom(sock, requestMsgBuf, MSGSIZE, 0, (struct sockaddr *) &chatClntAddr, &cliAddrLen)) < 0){
@@ -192,12 +193,12 @@ int main(int argc, char *argv[])
 			bzero(sendToUser, NAMEMAX);
 			strcpy(sendToUser, requestMsgBuf);
 			sendToUser[strlen(sendToUser)-1] = '\0'; //gets rid of the newline char at the end so the strcmp later works with clntList[iter].username
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			strcpy(sendMsgBuf, "Enter the message: ");
-			if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &chatClntAddr, sizeof(chatClntAddr))<0){
+			if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &chatClntAddr, sizeof(chatClntAddr))<0){
 				DieWithError("recvfrom() failed");
 			}
-			bzero(sendMsgBuf, MSGSIZE);
+			bzero(sendMsgBuf, MSGSIZE+NAMEMAX+11);
 			for(iter = 0; iter<numUsers; iter++){
 				if(clientCompare(clntList[iter].clntAddr, chatClntAddr) == TRUE){
 					strcpy(sendMsgBuf, clntList[iter].username);
@@ -212,7 +213,7 @@ int main(int argc, char *argv[])
 			strcat(sendMsgBuf, requestMsgBuf);
 			for(iter=0; iter<numUsers; iter++){
 				if(strcmp(sendToUser, clntList[iter].username) == 0){
-					if(sendto(sock, sendMsgBuf, MSGSIZE, 0, &clntList[iter].clntAddr, sizeof(clntList[iter].clntAddr)) < 0){
+					if(sendto(sock, sendMsgBuf, MSGSIZE+NAMEMAX+11, 0, &clntList[iter].clntAddr, sizeof(clntList[iter].clntAddr)) < 0){
 						DieWithError("sendto() failed");
 					}
 				}

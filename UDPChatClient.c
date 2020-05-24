@@ -97,6 +97,8 @@ int main(int argc, char *argv[])
 	for(int j = 0;j<MAXUSERS;j++){
 		usersBuffer[j][0] = 0;
 	}
+	/* tell the user how to begin sending a message */
+	printf("Type \"broadcast\" and hit enter to send a message to everyone in the chatroom\nType \"private\" and hit enter to send a message to a single user in the chatroom\n");
 
 	for(;;){
 		FD_SET(0,&rfds); //watching stdin
@@ -141,7 +143,6 @@ int main(int argc, char *argv[])
 						strcpy(usersBuffer[numUsers], recvMsgBuf);
 						printf("%s\n", usersBuffer[numUsers]);
 						numUsers++;
-						printf("Type \"broadcast\" and hit enter to send a message to everyone in the chatroom\n Type \"private\" to send a message to a single user in the chatroom\n");
 					}
 				}
 				/* if the message isn't "Username", just print out the received
