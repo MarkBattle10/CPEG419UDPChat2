@@ -29,11 +29,11 @@ void DieWithError(char *errorMessage);
 /* attempted to have the client receive and send messages at the same time using mutual exclusion switching */
 /*
 pthread_mutex_t mutexsum = PTHREAD_MUTEX_INITIALIZER;
-
+*/
 //void *sender(); /* thread function that will take user input and send out messages to server */
 
 //void *receiver(); /* thread function that will listen for received messages coming from the server */
-*/
+
 int main(int argc, char *argv[])
 {
 	int sock; /*Socket descriptor*/
